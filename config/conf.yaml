@@ -1,0 +1,7 @@
+mongo:
+  account : admin
+  password : 123456
+  address : 43.138.85.114
+  port : 27017
+  #这里是数据库名字
+  database: sx
