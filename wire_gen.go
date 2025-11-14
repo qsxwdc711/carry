@@ -26,7 +26,7 @@ func InitWebServer() *App {
 	engine := ioc.InitGin(v, userHandler)
 	app := &App{
 		server:  engine,
-		mongodb: client,
+		DB: client,
 	}
 	return app
 }

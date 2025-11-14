@@ -3,6 +3,7 @@ package ioc
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/zap"
@@ -26,6 +27,7 @@ func NewMongoWriter(db *mongo.Client) mongoWriter {
 
 func InitLogger(db *mongo.Client) domain.Loggers {
 	// 创建 encoder
+	fmt.Println("InitLogger called, db==nil?", db == nil, "GOOS=", runtime.GOOS)
 	encoderConfig := zap.NewProductionEncoderConfig()
 	encoderConfig.EncodeTime = zapcore.TimeEncoderOfLayout("2006-01-02 15:04:05")
 	encoderConfig.EncodeLevel = zapcore.CapitalLevelEncoder
@@ -34,17 +36,22 @@ func InitLogger(db *mongo.Client) domain.Loggers {
 	console := zapcore.Lock(os.Stdout)
 	var core zapcore.Core
 	mongodb := NewMongoWriter(db)
-	if runtime.GOOS == "linux" {
-		//linux下才会计入到数据库中
-		core = zapcore.NewCore(zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), zapcore.AddSync(&mongodb), zap.NewAtomicLevel())
-	} else {
-		//core = zapcore.NewCore(zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), zapcore.AddSync(&mongodb), zap.NewAtomicLevel())
-		core = zapcore.NewCore(encoder, console, zap.NewAtomicLevel())
-	}
+	//if runtime.GOOS == "linux" {
+	//	//linux下才会计入到数据库中
+	//	core = zapcore.NewCore(zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), zapcore.AddSync(&mongodb), zap.NewAtomicLevel())
+	//} else {
+	//	//core = zapcore.NewCore(zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), zapcore.AddSync(&mongodb), zap.NewAtomicLevel())
+	//	core = zapcore.NewCore(encoder, console, zap.NewAtomicLevel())
+	//}
+	core = zapcore.NewCore(
+		zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
+		zapcore.AddSync(&mongodb),
+		zap.NewAtomicLevel(),
+	)
 	logInfo := zap.New(zapcore.NewCore(encoder, console, zap.NewAtomicLevel()), zap.AddCaller())
 	// 创建 logger
 	log := zap.New(core, zap.AddCaller())
-	defer log.Sync()
+	//defer log.Sync()
 	zap.ReplaceGlobals(log)
 	//使用全局log，也就是logg会计入到mongo中，
 	//loginfo输出到控制台
@@ -57,6 +64,7 @@ func InitLogger(db *mongo.Client) domain.Loggers {
 func (mw mongoWriter) Write(p []byte) (n int, err error) {
 	var logMap map[string]interface{}
 	if err = json.Unmarshal(p, &logMap); err != nil {
+		fmt.Println("mongoWriter unmarshal error:", err, "raw:", string(p))
 		return 0, err
 	}
 	var log logStruct
@@ -76,6 +84,7 @@ func (mw mongoWriter) Write(p []byte) (n int, err error) {
 	log.Time = time.Now().Format("2006-01-02 15:04:05")
 	_, err = mw.logColl.InsertOne(context.Background(), log)
 	if err != nil {
+		fmt.Println("mongoWriter InsertOne error:", err)
 		return 0, err
 	}
 	return len(p), nil

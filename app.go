@@ -6,8 +6,8 @@ import (
 )
 
 type App struct {
-	server  *gin.Engine
-	mongodb *mongo.Client
+	server *gin.Engine
+	DB     *mongo.Client
 	//redis   redis.Cmdable
 	//cron    *cron.Cron
 }
