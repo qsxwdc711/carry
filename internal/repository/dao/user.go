@@ -14,6 +14,7 @@ import (
 type UserDaoInterface interface {
 	InsertOne(ctx context.Context, user User) (domain.User, error)
 	FindByAccount(ctx context.Context, account string) (User, error)
+	FindById(ctx context.Context, id primitive.ObjectID) (User, error)
 }
 type MongoUserDao struct {
 	db *mongo.Collection
@@ -53,14 +54,30 @@ func (dao *MongoUserDao) InsertOne(ctx context.Context, u User) (domain.User, er
 	id := res.InsertedID.(primitive.ObjectID)
 	return domain.User{Id: id}, nil
 }
+func (dao *MongoUserDao) FindById(ctx context.Context, id primitive.ObjectID) (User, error) {
+	traceID := ctx.Value(middleware.CtxTraceIDKey)
+	traceStr := ""
+	if s, ok := traceID.(string); ok {
+		traceStr = s
+	}
+
+	zap.L().Info("dao.FindById enter", zap.String("trace_id", traceStr))
+	var user User
+	err := dao.db.FindOne(ctx, bson.M{"_id": id}).Decode(&user)
+	if err != nil {
+		zap.L().Info("dao.FindById error", zap.Error(err))
+		return User{}, err
+	}
+	return user, nil
+}
 
 type User struct {
 	Id       primitive.ObjectID `json:"id" bson:"_id,omitempty"` // id
 	Account  string             `json:"account" bson:"account"`  // 账号
 	Name     string             `json:"name" bson:"name"`        //姓名
 	Phone    string             `json:"phone" bson:"phone"`
-	Sex      string             `json:"sex" bson:"sex"`                       // 性别
-	Password string             `json:"password" bson:"password"`             // 密码
-	Avatar   string             `json:"avatar" bson:"avatar"`                 // 头像
-	Role     primitive.ObjectID `json:"role,omitempty" bson:"role,omitempty"` // 角色外键
+	Sex      string             `json:"sex" bson:"sex"`           // 性别
+	Password string             `json:"password" bson:"password"` // 密码
+	Avatar   string             `json:"avatar" bson:"avatar"`     // 头像
+	//Role     primitive.ObjectID `json:"role,omitempty" bson:"role,omitempty"` // 角色外键
 }

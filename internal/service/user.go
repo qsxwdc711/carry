@@ -25,6 +25,7 @@ var (
 type UserServiceInterface interface {
 	Register(ctx context.Context, u domain.User) (any, error)
 	Login(ctx context.Context, account string, password string) (any, error)
+	GetProfile(ctx context.Context, id primitive.ObjectID) (domain.User, error)
 }
 type UserService struct {
 	repo repository.UserRepoInterface
@@ -112,6 +113,23 @@ func (svc *UserService) Login(ctx context.Context, account string, password stri
 //		}
 //		username, err := svc.repo.FindOneByAccount()
 //	}
+
+func (svc *UserService) GetProfile(ctx context.Context, id primitive.ObjectID) (domain.User, error) {
+	traceID := ctx.Value(middleware.CtxTraceIDKey)
+	traceStr := ""
+	if s, ok := traceID.(string); ok {
+		traceStr = s
+	}
+
+	zap.L().Info("service.GetProfile enter", zap.String("trace_id", traceStr))
+
+	u, err := svc.repo.FindById(ctx, id)
+	if err != nil {
+		zap.L().Error("service.GetProfile repo.FindById error", zap.Error(err))
+		return domain.User{}, err
+	}
+	return u, nil
+}
 func createToken(Id primitive.ObjectID) (tokenString string, err error) {
 	// 创建一个我们自己的声明
 	secret := viper.GetString("general.jwt")

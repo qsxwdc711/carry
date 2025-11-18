@@ -2,7 +2,6 @@ package web
 
 import (
 	"errors"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"net/http"
@@ -42,7 +41,7 @@ func (u *UserHandler) RegisterUserRoutes(server *gin.Engine) {
 }
 
 func (u *UserHandler) Register(ctx *gin.Context) {
-	traceID, _ := ctx.Get(middleware.CtxTraceIDKey)
+	traceID, _ := ctx.Get(middleware.GinTraceKey)
 	traceStr := ""
 	if s, ok := traceID.(string); ok {
 		traceStr = s
@@ -81,7 +80,7 @@ func (u *UserHandler) Register(ctx *gin.Context) {
 }
 
 func (u *UserHandler) login(ctx *gin.Context) {
-	traceID, _ := ctx.Get(middleware.CtxTraceIDKey)
+	traceID, _ := ctx.Get(middleware.GinTraceKey)
 	traceStr := ""
 	if s, ok := traceID.(string); ok {
 		traceStr = s
@@ -123,15 +122,16 @@ func (u *UserHandler) login(ctx *gin.Context) {
 }
 
 func (u *UserHandler) profile(ctx *gin.Context) {
+	traceStr := middleware.GetTraceID(ctx)
+	zap.L().Info("web.profile enter", zap.String("trace_id", traceStr))
 	claimsVal, exists := ctx.Get("claims")
 	if !exists {
 		ctx.JSON(http.StatusUnauthorized, gin.H{
 			"code": 401,
-			"msg":  "为获取到用户信息",
+			"msg":  "未获取到用户信息",
 		})
 		return
 	}
-	fmt.Println(claimsVal)
 	claims, ok := claimsVal.(domain.UserClaims)
 	if !ok {
 		ctx.JSON(http.StatusInternalServerError, gin.H{
@@ -140,11 +140,15 @@ func (u *UserHandler) profile(ctx *gin.Context) {
 		})
 		return
 	}
-	uid := claims.Uid
+	profile, err := u.svc.GetProfile(ctx.Request.Context(), claims.Uid)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{
+			"code": 500,
+			"msg":  "获取用户信息失败",
+		})
+		return
+	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"code":    200,
-		"user_id": uid,
-	})
+	ctx.JSON(http.StatusOK, profile)
 
 }

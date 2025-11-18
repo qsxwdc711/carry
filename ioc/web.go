@@ -12,6 +12,7 @@ func InitGin(mdls []gin.HandlerFunc,
 	userHdl *web.UserHandler,
 ) *gin.Engine {
 	server := gin.Default()
+
 	server.Use(mdls...)
 	userHdl.RegisterUserRoutes(server)
 	//roleHdl.RegisterRoleRoutes(server)

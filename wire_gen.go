@@ -25,8 +25,8 @@ func InitWebServer() *App {
 	userHandler := web.NewUserHandler(userServiceInterface)
 	engine := ioc.InitGin(v, userHandler)
 	app := &App{
-		server:  engine,
-		DB: client,
+		server: engine,
+		DB:     client,
 	}
 	return app
 }
