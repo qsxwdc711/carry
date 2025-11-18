@@ -42,11 +42,11 @@ func InitLogger(db *mongo.Client) domain.Loggers {
 		//core = zapcore.NewCore(zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), zapcore.AddSync(&mongodb), zap.NewAtomicLevel())
 		core = zapcore.NewCore(encoder, console, zap.NewAtomicLevel())
 	}
-	//core = zapcore.NewCore(
-	//	zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
-	//	zapcore.AddSync(&mongodb),
-	//	zap.NewAtomicLevel(),
-	//)
+	core = zapcore.NewCore(
+		zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
+		zapcore.AddSync(&mongodb),
+		zap.NewAtomicLevel(),
+	)
 	logInfo := zap.New(zapcore.NewCore(encoder, console, zap.NewAtomicLevel()), zap.AddCaller())
 	// 创建 logger
 	log := zap.New(core, zap.AddCaller())
