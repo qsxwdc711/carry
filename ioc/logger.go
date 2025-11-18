@@ -9,7 +9,6 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"os"
-	"runtime"
 	"sx-go/internal/domain"
 	"time"
 )
@@ -35,13 +34,13 @@ func InitLogger(db *mongo.Client) domain.Loggers {
 	console := zapcore.Lock(os.Stdout)
 	var core zapcore.Core
 	mongodb := NewMongoWriter(db)
-	if runtime.GOOS == "linux" {
-		//linux下才会计入到数据库中
-		core = zapcore.NewCore(zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), zapcore.AddSync(&mongodb), zap.NewAtomicLevel())
-	} else {
-		//core = zapcore.NewCore(zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), zapcore.AddSync(&mongodb), zap.NewAtomicLevel())
-		core = zapcore.NewCore(encoder, console, zap.NewAtomicLevel())
-	}
+	//if runtime.GOOS == "linux" {
+	//	//linux下才会计入到数据库中
+	//	core = zapcore.NewCore(zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), zapcore.AddSync(&mongodb), zap.NewAtomicLevel())
+	//} else {
+	//	//core = zapcore.NewCore(zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), zapcore.AddSync(&mongodb), zap.NewAtomicLevel())
+	//	core = zapcore.NewCore(encoder, console, zap.NewAtomicLevel())
+	//}
 	core = zapcore.NewCore(
 		zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
 		zapcore.AddSync(&mongodb),
