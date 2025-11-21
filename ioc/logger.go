@@ -34,6 +34,7 @@ func InitLogger(db *mongo.Client) domain.Loggers {
 	console := zapcore.Lock(os.Stdout)
 	var core zapcore.Core
 	mongodb := NewMongoWriter(db)
+
 	//if runtime.GOOS == "linux" {
 	//	//linux下才会计入到数据库中
 	//	core = zapcore.NewCore(zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()), zapcore.AddSync(&mongodb), zap.NewAtomicLevel())
